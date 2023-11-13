@@ -3,8 +3,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Project } from './projects.schema';
 import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from 'src/app/projects/dto/update-project.dto';
-import { FindProjectByNameDto } from 'src/app/projects/dto/find-project-by-name.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { FindProjectByNameDto } from './dto/find-project-by-name.dto';
 import { FindAllProjectsDto } from './dto/find-all-projects.dto';
 
 @Injectable()
