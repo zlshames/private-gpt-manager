@@ -4,7 +4,10 @@ import { Project } from '../projects/projects.schema';
 
 export type DocumentDocument = HydratedDocument<Document>;
 
-@Schema()
+@Schema({
+  timestamps: true,
+  versionKey: false
+})
 export class Document {
   @Prop({
     type: mongoose.Schema.Types.String
@@ -44,20 +47,6 @@ export class Document {
     default: {},
   })
   metadata: Record<string, any>;
-
-  @Prop({
-    type: mongoose.Schema.Types.Date,
-    required: true,
-    default: () => new Date()
-  })
-  createdAt: Date;
-
-  @Prop({
-    type: mongoose.Schema.Types.Date,
-    required: true,
-    default: () => new Date()
-  })
-  updatedAt: Date;
 
   @Prop({
     type: mongoose.Schema.Types.Date,

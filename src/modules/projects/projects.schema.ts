@@ -3,7 +3,10 @@ import mongoose, { HydratedDocument } from 'mongoose';
 
 export type ProjectDocument = HydratedDocument<Project>;
 
-@Schema()
+@Schema({
+  timestamps: true,
+  versionKey: false
+})
 export class Project {
   @Prop({
     type: mongoose.Schema.Types.String
@@ -44,23 +47,7 @@ export class Project {
 
   @Prop({
     type: mongoose.Schema.Types.Date,
-    required: true,
-    default: () => new Date(),
-    nullable: false
-  })
-  createdAt: Date;
-
-  @Prop({
-    type: mongoose.Schema.Types.Date,
-    required: true,
-    default: () => new Date(),
-    nullable: false
-  })
-  updatedAt: Date;
-
-  @Prop({
-    type: mongoose.Schema.Types.Date,
-    required: true,
+    required: false,
     default: null,
     nullable: true
   })

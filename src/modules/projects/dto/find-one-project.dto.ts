@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
-export class FindProjectByNameDto {
+export class FindOneProjectDto {
   @IsString()
   @ApiProperty({ required: true })
-  name: string;
+  id: string;
 
   @IsOptional()
   @IsBoolean()

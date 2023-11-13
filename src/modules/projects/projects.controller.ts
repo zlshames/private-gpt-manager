@@ -1,5 +1,7 @@
-import { Controller, Delete, Get, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+
 
 @Controller('projects')
 export class ProjectsController {
@@ -12,22 +14,47 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  findOne(id: string): string {
-    return 'This action returns one project';
+  findOne(@Param() params) {
+    const result = this.projectsService.findOne(params.id);
+    return result;
   }
 
+  @UseGuards()
   @Post()
-  create(): string {
-    return 'This action creates a project';
+  async create(@Body() data: CreateProjectDto) {
+    const result = await this.projectsService.create(data);
+    return result;
   }
 
   @Put(':id')
-  update(id: string): string {
-    return 'This action updates a project';
+  async update(@Param() param) {
+    const data = await this.projectsService.update(param.id, param);
+    return {
+      message: `Project ${param.id} updated`,
+      data
+    }
   }
 
   @Delete(':id')
-  delete(id: string): string {
-    return 'This action deletes a project';
+  async delete(@Param() params) {
+    const data = await this.projectsService.delete(params.id);
+    if (!data) {
+      return {
+        error: `Project ${params.id} not found`
+      }
+    }
+
+    return {
+      message: `Project ${params.id} deleted`,
+      data
+    }
+  }
+
+  @Delete(':id/hard')
+  async hardDelete(@Param() params) {
+    await this.projectsService.hardDelete(params.id);
+    return {
+      message: `Project ${params.id} permanently deleted`
+    }
   }
 }
