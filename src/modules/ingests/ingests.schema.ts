@@ -10,11 +10,6 @@ export type IngestIngest = HydratedDocument<Ingest>;
 })
 export class Ingest {
   @Prop({
-    type: mongoose.Schema.Types.String
-  })
-  id: string;
-
-  @Prop({
     type: mongoose.Schema.Types.String,
     required: true
   })

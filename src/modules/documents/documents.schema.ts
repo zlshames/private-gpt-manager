@@ -10,11 +10,6 @@ export type DocumentDocument = HydratedDocument<Document>;
 })
 export class Document {
   @Prop({
-    type: mongoose.Schema.Types.String
-  })
-  id: string;
-
-  @Prop({
     type: mongoose.Schema.Types.String,
     required: true
   })

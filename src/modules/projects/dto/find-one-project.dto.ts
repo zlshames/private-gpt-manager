@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBooleanString, IsOptional, IsString } from 'class-validator';
 
 export class FindOneProjectDto {
   @IsString()
@@ -7,12 +7,12 @@ export class FindOneProjectDto {
   id: string;
 
   @IsOptional()
-  @IsBoolean()
-  @ApiProperty({ required: false, default: false })
-  withDocuments?: boolean = false;
+  @IsBooleanString()
+  @ApiProperty({ required: false, default: 'false' })
+  withDocuments?: string = 'false';
 
   @IsOptional()
-  @IsBoolean()
-  @ApiProperty({ required: false, default: false })
-  withIngests?: boolean = false;
+  @IsBooleanString()
+  @ApiProperty({ required: false, default: 'false' })
+  withIngests?: string = 'false';
 }

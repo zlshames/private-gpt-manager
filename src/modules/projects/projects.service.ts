@@ -1,12 +1,15 @@
 import { Model } from 'mongoose';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { MongooseQueryParser } from 'mongoose-query-parser';
+
 import { Project } from './projects.schema';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { FindProjectByNameDto } from './dto/find-project-by-name.dto';
-import { FindAllProjectsDto } from './dto/find-all-projects.dto';
+import { FindProjectsDto } from './dto/find-projects.dto';
 import { FindOneProjectDto } from './dto/find-one-project.dto';
+import { SetProjectMetadataDto } from './dto/set-project-metadata.dto';
+import { PutProjectMetadataDto } from './dto/put-project-metadata.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -14,23 +17,32 @@ export class ProjectsService {
 
   async create(createProjectDto: CreateProjectDto): Promise<Project> {
     const createdProject = new this.projectModel(createProjectDto);
-    return createdProject.save();
+    return await createdProject.save();
   }
 
-  async findAll(findAllProjectsDto: FindAllProjectsDto = {}): Promise<Project[]> {
-    const query = this.projectModel.find();
-    if (findAllProjectsDto.withDocuments) {
-      query.populate('documents');
+  async find(findProjectsDto: FindProjectsDto = {}): Promise<Project[]> {
+    const { withDocuments, withIngests, deleted, query, ...params } = findProjectsDto;
+    const q = this.projectModel.find({ ...params, deletedAt: deleted ? { $ne: null } : null });
+    
+    // If there is a query string provided, use it to search the name field
+    const parser = new MongooseQueryParser();
+    if (query) {
+      const parsedQuery = parser.parse(query);
+      q.find(parsedQuery.filter);
     }
 
-    if (findAllProjectsDto.withIngests) {
-      query.populate('ingests');
+    if (withDocuments) {
+      q.populate('documents');
+    }
+
+    if (withIngests) {
+      q.populate('ingests');
     }
     
-    return this.projectModel.find().exec();
+    return await q.exec();
   }
 
-  async findOne(findOneProjectDto: FindOneProjectDto): Promise<Project[]> {
+  async findOne(findOneProjectDto: FindOneProjectDto): Promise<Project> {
     const query = this.projectModel.findOne({ _id: findOneProjectDto.id });
     if (findOneProjectDto.withDocuments) {
       query.populate('documents');
@@ -40,19 +52,6 @@ export class ProjectsService {
       query.populate('ingests');
     }
     
-    return this.projectModel.find().exec();
-  }
-
-  async findByName(findByNameDto: FindProjectByNameDto): Promise<Project | null> {
-    const query = this.projectModel.findOne({ name: findByNameDto.name });
-    if (findByNameDto.withDocuments) {
-      query.populate('documents');
-    }
-
-    if (findByNameDto.withIngests) {
-      query.populate('ingests');
-    }
-
     return await query.exec();
   }
 
@@ -62,8 +61,32 @@ export class ProjectsService {
       throw new NotFoundException(`Project #${id} not found`);
     }
 
-    project.overwrite(updateProjectDto);
+    project.set(updateProjectDto);
     return project.save();
+  }
+
+  async setProjectMetadata(id: string, setProjectMetadata: SetProjectMetadataDto): Promise<Project> {
+    const project = await this.projectModel.findOne({ _id: id }).exec();
+    if (!project) {
+      throw new NotFoundException(`Project #${id} not found`);
+    }
+
+    project.metadata = setProjectMetadata.metadata;
+    return await project.save();
+  }
+
+  async putProjectMetadata(id: string, putProjectMetadata: PutProjectMetadataDto): Promise<Project> {
+    const project = await this.projectModel.findOne({ _id: id }).exec();
+    if (!project) {
+      throw new NotFoundException(`Project #${id} not found`);
+    }
+
+    // Iterate over input metadata and set it on the project
+    for (const [key, value] of Object.entries(putProjectMetadata.metadata)) {
+      project.metadata.set(key, value);
+    }
+
+    return await project.save();
   }
 
   async delete(id: string): Promise<Project> {

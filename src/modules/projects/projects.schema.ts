@@ -9,11 +9,6 @@ export type ProjectDocument = HydratedDocument<Project>;
 })
 export class Project {
   @Prop({
-    type: mongoose.Schema.Types.String
-  })
-  id: string;
-
-  @Prop({
     type: mongoose.Schema.Types.String,
     required: true
   })
@@ -36,9 +31,6 @@ export class Project {
 
   @Prop({
     type: mongoose.Schema.Types.Map,
-    raw: raw({
-      // Nothing for now
-    }),
     required: false,
     default: {},
     nullable: false
