@@ -10,6 +10,14 @@ export type IngestIngest = HydratedDocument<Ingest>;
 })
 export class Ingest {
   @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    index: true,
+    auto: true
+  })
+  _id: string;
+
+  @Prop({
     type: mongoose.Schema.Types.String,
     required: true
   })
@@ -23,13 +31,28 @@ export class Ingest {
 
   @Prop({
     type: mongoose.Schema.Types.Map,
-    raw: raw({
-      // Nothing for now
-    }),
     required: false,
     default: {},
   })
   metadata: Record<string, any>;
+
+  @Prop({
+    type: mongoose.Schema.Types.Date,
+    required: true,
+    default: new Date(),
+    nullable: false,
+    auto: true
+  })
+  createdAt: Date;
+
+  @Prop({
+    type: mongoose.Schema.Types.Date,
+    required: true,
+    default: new Date(),
+    nullable: false,
+    auto: true
+  })
+  updatedAt: Date;
 
   @Prop({
     type: mongoose.Schema.Types.Date,

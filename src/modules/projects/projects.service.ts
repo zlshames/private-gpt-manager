@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MongooseQueryParser } from 'mongoose-query-parser';
 
@@ -10,10 +10,15 @@ import { FindProjectsDto } from './dto/find-projects.dto';
 import { FindOneProjectDto } from './dto/find-one-project.dto';
 import { SetProjectMetadataDto } from './dto/set-project-metadata.dto';
 import { PutProjectMetadataDto } from './dto/put-project-metadata.dto';
+import { CreateDocumentDto } from './dto/create-document.dto';
+import { DocumentsService } from '../documents/documents.service';
 
 @Injectable()
 export class ProjectsService {
-  constructor(@InjectModel(Project.name) private projectModel: Model<Project>) {}
+  constructor(
+    @InjectModel(Project.name) private projectModel: Model<Project>,
+    @Inject(DocumentsService) private documentsService: DocumentsService,
+  ) {}
 
   async create(createProjectDto: CreateProjectDto): Promise<Project> {
     const createdProject = new this.projectModel(createProjectDto);
@@ -87,6 +92,10 @@ export class ProjectsService {
     }
 
     return await project.save();
+  }
+
+  async addDocument(id: string, createDocumentDto: CreateDocumentDto) {
+    return await this.documentsService.create({ projectId: id, ...createDocumentDto });
   }
 
   async delete(id: string): Promise<Project> {

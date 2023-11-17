@@ -4,21 +4,22 @@ import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 import { Project, ProjectSchema } from './projects.schema';
 import { RequireJsonMiddleware } from 'src/middleware/require-json.middleware';
+import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
   imports: [
+    DocumentsModule,
     MongooseModule.forFeature([
-        { name: Project.name, schema: ProjectSchema }
+        { name: Project.name, schema: ProjectSchema },
     ])
   ],
   controllers: [
     ProjectsController
   ],
   providers: [
-    ProjectsService
+    ProjectsService,
   ],
 })
-
 export class ProjectsModule {
   configure(consumer: MiddlewareConsumer) {
     consumer

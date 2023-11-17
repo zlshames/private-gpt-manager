@@ -16,6 +16,8 @@ import { Document, DocumentSchema } from './documents.schema';
   providers: [
     DocumentsService
   ],
+  exports: [
+    DocumentsService
+  ]
 })
-
 export class DocumentsModule {}
