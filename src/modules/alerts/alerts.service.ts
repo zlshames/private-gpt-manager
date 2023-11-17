@@ -6,14 +6,12 @@ import { MongooseQueryParser } from 'mongoose-query-parser';
 import { Alert } from './alerts.schema';
 import { MarkAlertsReadDto } from './dto/mark-alerts-read.dto';
 import { FindAlertsDto } from './dto/find-alerts.dto';
-import { DocumentsService } from '../documents/documents.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 
 @Injectable()
 export class AlertsService {
   constructor(
-    @InjectModel(Alert.name) private alertModel: Model<Alert>,
-    @Inject(DocumentsService) private documentsService: DocumentsService,
+    @InjectModel(Alert.name) private alertModel: Model<Alert>
   ) {}
 
   async create(createAlertDto: CreateAlertDto): Promise<Alert> {
