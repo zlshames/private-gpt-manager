@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsBooleanString, IsString } from 'class-validator';
+import { IsOptional, IsBooleanString, IsString, IsObject } from 'class-validator';
+
 
 export class FindJobsDto {
   @IsOptional()
@@ -10,12 +11,12 @@ export class FindJobsDto {
   @IsOptional()
   @IsString()
   @ApiProperty({ required: false })
-  name?: string;
+  query?: string;
 
   @IsOptional()
-  @IsString()
+  @IsObject()
   @ApiProperty({ required: false })
-  query?: string;
+  params?: Record<string, any> = {};
 
   @IsOptional()
   @IsBooleanString()

@@ -6,6 +6,9 @@ import { Model } from "mongoose";
 export class JobItem {
     _job: Job;
 
+    @InjectModel(Job.name)
+    private jobModel: Model<Job>;
+
     get isFinished(): boolean {
         return [
             JobStatus.COMPLETED,
@@ -15,10 +18,7 @@ export class JobItem {
         ].includes(this._job.status);
     }
 
-    constructor(
-        @InjectModel(Job.name) private jobModel: Model<Job>,
-        job: Job
-    ) {
+    constructor(job: Job) {
         this._job = job;
     }
 

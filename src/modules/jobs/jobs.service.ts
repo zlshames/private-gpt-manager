@@ -9,21 +9,16 @@ import { FindJobsDto } from './dto/find-jobs.dto';
 import { FindOneJobDto } from './dto/find-one-job.dto';
 import { SetJobMetadataDto } from './dto/set-job-metadata.dto';
 import { PutJobMetadataDto } from './dto/put-job-metadata.dto';
-import { JobExecutor } from './lib/job-executor';
 import { CreateJobForProjectDto } from './dto/create-job-for-project.dto';
 import { ProjectsService } from '../projects/projects.service';
 
 @Injectable()
 export class JobsService {
 
-  jobExecutor: JobExecutor;
-
   constructor(
     @InjectModel(Job.name) private jobModel: Model<Job>,
     @Inject(ProjectsService) private projectsService: ProjectsService,
-  ) {
-    this.jobExecutor = new JobExecutor();
-  }
+  ) {}
 
   async create(projectId: string, createJobDto: CreateJobForProjectDto): Promise<Job> {
     const project = await this.projectsService.findOne({ id: projectId });

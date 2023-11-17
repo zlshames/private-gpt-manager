@@ -8,10 +8,10 @@ import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
   imports: [
-    DocumentsModule,
     MongooseModule.forFeature([
         { name: Project.name, schema: ProjectSchema },
-    ])
+    ]),
+    DocumentsModule
   ],
   controllers: [
     ProjectsController
@@ -19,6 +19,9 @@ import { DocumentsModule } from '../documents/documents.module';
   providers: [
     ProjectsService,
   ],
+  exports: [
+    ProjectsService
+  ]
 })
 export class ProjectsModule {
   configure(consumer: MiddlewareConsumer) {

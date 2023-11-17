@@ -9,12 +9,6 @@ export type IngestIngest = HydratedDocument<Ingest>;
   versionKey: false
 })
 export class Ingest {
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    index: true,
-    auto: true
-  })
   _id: string;
 
   @Prop({
@@ -36,22 +30,8 @@ export class Ingest {
   })
   metadata: Record<string, any>;
 
-  @Prop({
-    type: mongoose.Schema.Types.Date,
-    required: true,
-    default: new Date(),
-    nullable: false,
-    auto: true
-  })
   createdAt: Date;
 
-  @Prop({
-    type: mongoose.Schema.Types.Date,
-    required: true,
-    default: new Date(),
-    nullable: false,
-    auto: true
-  })
   updatedAt: Date;
 
   @Prop({

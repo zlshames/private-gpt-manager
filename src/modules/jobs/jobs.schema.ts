@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument, ObjectId } from 'mongoose';
+import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
+import mongoose, { HydratedDocument } from 'mongoose';
 import { Project } from '../projects/projects.schema';
 import { JobOutput, JobStatus, JobTypes } from './types/job.types';
 
@@ -10,12 +10,6 @@ export type JobJob = HydratedDocument<Job>;
   versionKey: false
 })
 export class Job {
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    index: true,
-    auto: true
-  })
   _id: string;
 
   @Prop({
@@ -61,11 +55,11 @@ export class Job {
   @Prop({
     // map with errors?, message?, and data?
     type: mongoose.Schema.Types.Map,
-    of: new mongoose.Schema({
+    raw: raw({
       errors: {
         type: mongoose.Schema.Types.Array,
         required: false,
-        of: new mongoose.Schema({
+        raw: raw({
           message: {
             type: mongoose.Schema.Types.String,
             required: true
@@ -77,10 +71,7 @@ export class Job {
           }
         })
       },
-      message: {
-        type: mongoose.Schema.Types.String,
-        required: true
-      },
+      message: { type: String, required: true },
       data: {
         type: mongoose.Schema.Types.Map,
         required: false,
@@ -103,22 +94,8 @@ export class Job {
   })
   completedAt: Date;
 
-  @Prop({
-    type: mongoose.Schema.Types.Date,
-    required: true,
-    default: new Date(),
-    nullable: false,
-    auto: true
-  })
   createdAt: Date;
 
-  @Prop({
-    type: mongoose.Schema.Types.Date,
-    required: true,
-    default: new Date(),
-    nullable: false,
-    auto: true
-  })
   updatedAt: Date;
 
   @Prop({

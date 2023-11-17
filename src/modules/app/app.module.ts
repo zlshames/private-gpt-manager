@@ -6,6 +6,7 @@ import { IngestsModule } from '../ingests/ingests.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { DbModule } from '../db/db.module';
 import { FileSystemModule } from '../filesystem/filesystem.module';
+import { JobsModule } from '../jobs/jobs.module';
 
 
 @Module({
@@ -14,7 +15,8 @@ import { FileSystemModule } from '../filesystem/filesystem.module';
     DbModule,
     ProjectsModule,
     IngestsModule,
-    DocumentsModule
+    DocumentsModule,
+    JobsModule
   ],
   controllers: [AppController],
   providers: [AppService],
