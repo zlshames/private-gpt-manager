@@ -24,7 +24,6 @@ export class ProjectsController {
     return await this.projectsService.findOne(params);
   }
 
-  @UseGuards()
   @Post()
   async create(@Body() data: CreateProjectDto) {
     return await this.projectsService.create(data);
