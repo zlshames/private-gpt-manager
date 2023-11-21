@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, forwardRef, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MongooseQueryParser } from 'mongoose-query-parser';
 
@@ -11,28 +11,33 @@ import { SetJobMetadataDto } from './dto/set-job-metadata.dto';
 import { PutJobMetadataDto } from './dto/put-job-metadata.dto';
 import { CreateJobForProjectDto } from './dto/create-job-for-project.dto';
 import { ProjectsService } from '../projects/projects.service';
+import { JobDbChangeEvent } from './types/job.types';
+
 
 @Injectable()
 export class JobsService {
 
+  private log = new Logger(JobsService.name);
+
   constructor(
     @InjectModel(Job.name) private jobModel: Model<Job>,
-    @Inject(ProjectsService) private projectsService: ProjectsService,
+    @Inject(forwardRef(() => ProjectsService)) private projectsService: ProjectsService,
   ) {}
 
   async create(projectId: string, createJobDto: CreateJobForProjectDto): Promise<Job> {
+    this.log.debug(`Creating job for project #${projectId}`);
     const project = await this.projectsService.findOne({ id: projectId });
     if (!project) {
       throw new Error(`Project #${projectId} not found`);
     }
 
-    const job = new this.jobModel(createJobDto);
+    const job = new this.jobModel({ ...createJobDto, project });
     return await job.save();
   }
 
   async find(findJobsDto: FindJobsDto = {}): Promise<Job[]> {
-    const { withProject, deleted, query, ...params } = findJobsDto;
-    const q = this.jobModel.find({ ...params, deletedAt: deleted ? { $ne: null } : null });
+    const { withProject, deleted, query, params } = findJobsDto;
+    const q = this.jobModel.find({ ...(params ?? {}), deletedAt: deleted ? { $ne: null } : null });
     
     // If there is a query string provided, use it to search the name field
     const parser = new MongooseQueryParser();
@@ -103,5 +108,9 @@ export class JobsService {
 
   async hardDelete(id: string): Promise<Job> {
     return await this.jobModel.findOneAndDelete({ _id: id }).exec();
+  }
+
+  registerDbChangeListener(changeListener: (event: JobDbChangeEvent) => void) {
+    this.jobModel.watch().on('change', changeListener);
   }
 }

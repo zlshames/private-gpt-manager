@@ -1,13 +1,12 @@
 import { Job } from "../jobs.schema";
+import { JobsService } from "../jobs.service";
 import { JobOutput, JobStatus } from "../types/job.types";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+
 
 export class JobItem {
     _job: Job;
 
-    @InjectModel(Job.name)
-    private jobModel: Model<Job>;
+    _jobsService: JobsService;
 
     get isFinished(): boolean {
         return [
@@ -18,12 +17,13 @@ export class JobItem {
         ].includes(this._job.status);
     }
 
-    constructor(job: Job) {
+    constructor(job: Job, jobsService: JobsService) {
         this._job = job;
+        this._jobsService = jobsService;
     }
 
     async update() {
-        await this.jobModel.updateOne(this._job).exec();
+        await this._jobsService.update(this._job._id, this._job);
     }
 
     async complete(output: JobOutput): Promise<void> {

@@ -1,14 +1,20 @@
-import { JobStatus, JobTypes } from "../types/job.types";
+import { JobDbChangeEvent, JobStatus, JobTypes } from "../jobs/types/job.types";
 import { CreateProjectExecutor } from "./executors/docker-private-gpt/create-project.executor";
 import { DeleteProjectExecutor } from "./executors/docker-private-gpt/delete-project-executor";
 import { IngestDocumentExecutor } from "./executors/docker-private-gpt/ingest-document.executor";
-import { JobItem } from "./job-item";
-import { JobsService } from "../jobs.service";
+import { ProjectsService } from "src/modules/projects/projects.service";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { JobItem } from "../jobs/lib/job-item";
+import { JobsService } from "../jobs/jobs.service";
+import { InjectModel } from "@nestjs/mongoose";
 
 require('dotenv').config();
 
 
-export class JobExecutor {
+@Injectable()
+export class JobExecutorsService {
+
+    private log = new Logger(JobExecutorsService.name);
 
     /**
      * The maximum number of jobs that can run at once
@@ -31,16 +37,22 @@ export class JobExecutor {
     get canRunMoreJobs(): boolean {
         return this._runningJobs.length < this._maxConcurrentJobs;
     }
-    
-    constructor(private jobsService: JobsService) {}
+
+    constructor(
+        @Inject(JobsService) private jobsService: JobsService,
+        @Inject(ProjectsService) private projectsService: ProjectsService
+      ) {
+        this.log.debug(`JobExecutorsService Instantiated`);
+      }
 
     /**
      * Fail any jobs that were running when the server was restarted
      */
     async closeIncompleteJobs(): Promise<void> {
-        // TODO: Get all jobs that are running
-        const jobs = [];
+        const jobs = await this.getRunningJobs();
+        if (jobs.length === 0) return;
 
+        this.log.debug(`Found ${jobs.length} interrupted jobs. Failing them now.`);
         await Promise.all(jobs.map(async job => {
             if (job._job.status === JobStatus.RUNNING) {
                 await job.fail({
@@ -61,8 +73,17 @@ export class JobExecutor {
      * It will then run any pending jobs.
      */
     async start() {
+        this.log.log('Starting JobExecutor Service');
         await this.closeIncompleteJobs();
         await this.runJobs();
+
+        // Listen for changes to the job database
+        this.jobsService.registerDbChangeListener((event: JobDbChangeEvent) => {
+            if (event.operationType === 'insert') {
+                this.log.log('New job added to database. Running jobs now');
+                this.runJobs();
+            }
+        })
     }
 
     /**
@@ -70,7 +91,17 @@ export class JobExecutor {
      *
      * @param job The job that was completed
      */
-    async onComplete(_: JobItem) {
+    async onComplete(job: JobItem) {
+        this.log.log(`Job #${job._job._id} completed with status ${job._job.status}`);
+        if (job._job.status === JobStatus.FAILED) {
+            this.log.error(`Job #${job._job._id} failed with error message: ${job._job.output.message}`);
+            this.log.error(`Job Output: ${JSON.stringify(job._job.output)}`);
+        } else if (job._job.status === JobStatus.COMPLETED_WITH_ERRORS) {
+            this.log.warn(`Job #${job._job._id} completed with errors: ${job._job.output.message}`);
+        } else {
+            this.log.debug(`Job #${job._job._id} completed successfully`);
+        }
+
         // When a job is completed, run any other jobs that are pending (if we can)
         this.runJobs();
     }
@@ -87,9 +118,14 @@ export class JobExecutor {
         // We only want to run this code once at a time
         if (this.runJobsPromise != null) return this.runJobsPromise;
 
+        this.log.log('Checking for jobs to run');
         this.runJobsPromise = new Promise(async (resolve, reject) => {
             try {
-                const jobs = await this.getJobsToRun();
+                const jobs = await this.getPendingJobs();
+                this.log.debug(`Found ${jobs.length} job(s) to run`);
+                if (jobs.length > this._maxConcurrentJobs) {
+                    this.log.debug(`Only running ${this._maxConcurrentJobs} of the jobs at once`);
+                }
             
                 // Only run jobs up to the max concurrent jobs
                 const jobsToRun = jobs.slice(0, this._maxConcurrentJobs - this._runningJobs.length);
@@ -144,14 +180,31 @@ export class JobExecutor {
      *
      * @returns {JobItem[]}
      */
-    async getJobsToRun(): Promise<JobItem[]> {
+    async getPendingJobs(): Promise<JobItem[]> {
         const jobs = await this.jobsService.find({
+            withProject: 'true',
             params: {
                 status: JobStatus.PENDING
             }
         });
 
-        return jobs.map(job => new JobItem(job));
+        return jobs.map(job => new JobItem(job, this.jobsService));
+    }
+
+    /**
+     * Load jobs that are running
+     *
+     * @returns {JobItem[]}
+     */
+    async getRunningJobs(): Promise<JobItem[]> {
+        const jobs = await this.jobsService.find({
+            withProject: 'true',
+            params: {
+                status: JobStatus.RUNNING
+            }
+        });
+
+        return jobs.map(job => new JobItem(job, this.jobsService));
     }
 
     /**
@@ -173,7 +226,7 @@ export class JobExecutor {
             throw new Error(`Job #${job._job._id} not found after running job!`);
         }
 
-        return new JobItem(jobNow);
+        return new JobItem(jobNow, this.jobsService);
     }
 
     /**
@@ -185,11 +238,11 @@ export class JobExecutor {
     getJobExecutor(job: JobItem) {
         switch (job._job.type) {
             case JobTypes.CREATE_PROJECT:
-                return new CreateProjectExecutor(job);
+                return new CreateProjectExecutor(job, this.projectsService);
             case JobTypes.DELETE_PROJECT:
-                return new DeleteProjectExecutor(job);
+                return new DeleteProjectExecutor(job, this.projectsService);
             case JobTypes.INGEST_DOCUMENT:
-                return new IngestDocumentExecutor(job);
+                return new IngestDocumentExecutor(job, this.projectsService);
             default:
                 throw new Error(`Unknown job type: ${job._job.type}`);
         }

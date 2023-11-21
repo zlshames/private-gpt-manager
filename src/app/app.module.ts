@@ -1,22 +1,22 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ProjectsModule } from '../projects/projects.module';
-import { IngestsModule } from '../ingests/ingests.module';
-import { DocumentsModule } from '../documents/documents.module';
-import { DbModule } from '../db/db.module';
-import { FileSystemModule } from '../filesystem/filesystem.module';
-import { JobsModule } from '../jobs/jobs.module';
+import { IngestsModule } from '../modules/ingests/ingests.module';
+import { DocumentsModule } from '../modules/documents/documents.module';
+import { DbModule } from '../modules/db/db.module';
+import { FileSystemModule } from '../modules/filesystem/filesystem.module';
+import { JobExecutorsModule } from 'src/modules/job-executors/job-executors.module';
 
 
 @Module({
   imports: [
     FileSystemModule,
     DbModule,
-    ProjectsModule,
     IngestsModule,
     DocumentsModule,
-    JobsModule
+    // ProjectsModule & JobsModule are circular dependencies
+    // So we import them through JobExecutorsModule, using forwardRef
+    JobExecutorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -13,6 +13,14 @@ export class Job {
   _id: string;
 
   @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project',
+    required: false,
+    default: null
+  })
+  project: Project;
+
+  @Prop({
     type: mongoose.Schema.Types.String,
     required: true
   })
@@ -38,12 +46,6 @@ export class Job {
     default: {}
   })
   input: Record<string, any>;
-
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project'
-  })
-  project: Project;
 
   @Prop({
     type: mongoose.Schema.Types.Map,

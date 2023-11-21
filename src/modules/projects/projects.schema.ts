@@ -9,10 +9,18 @@ export type ProjectDocument = HydratedDocument<Project>;
 })
 export class Project {
   _id: string;
+
+  @Prop({
+    type: mongoose.Schema.Types.Boolean,
+    required: true,
+    default: true
+  })
+  enabled: boolean;
   
   @Prop({
     type: mongoose.Schema.Types.String,
-    required: true
+    required: true,
+    unique: true
   })
   name: string;
 

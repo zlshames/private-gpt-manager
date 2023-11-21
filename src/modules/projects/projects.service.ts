@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MongooseQueryParser } from 'mongoose-query-parser';
 
@@ -12,17 +12,33 @@ import { SetProjectMetadataDto } from './dto/set-project-metadata.dto';
 import { PutProjectMetadataDto } from './dto/put-project-metadata.dto';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { DocumentsService } from '../documents/documents.service';
+import { Job } from '../jobs/jobs.schema';
+import { JobsService } from '../jobs/jobs.service';
+import { JobTypes } from '../jobs/types/job.types';
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectModel(Project.name) private projectModel: Model<Project>,
     @Inject(DocumentsService) private documentsService: DocumentsService,
-  ) {}
+    @Inject(forwardRef(() => JobsService)) private jobsService: JobsService
+  ) {
+    console.log(`ProjectsService Init`)
+  }
 
-  async create(createProjectDto: CreateProjectDto): Promise<Project> {
-    const createdProject = new this.projectModel(createProjectDto);
-    return await createdProject.save();
+  async create(createProjectDto: CreateProjectDto): Promise<Job> {
+    let createdProject = new this.projectModel(createProjectDto);
+    createdProject = await createdProject.save();
+
+    // Once the project is created, we need to create a job for it
+    const createdJob = await this.jobsService.create(createdProject.id, {
+      type: JobTypes.CREATE_PROJECT,
+      input: {
+        projectId: createdProject.id
+      }
+    });
+
+    return createdJob;
   }
 
   async find(findProjectsDto: FindProjectsDto = {}): Promise<Project[]> {

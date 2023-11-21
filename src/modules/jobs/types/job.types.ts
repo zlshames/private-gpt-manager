@@ -6,7 +6,7 @@ export type JobErrors = [
 ];
 
 export type JobOutput = {
-  errors: JobErrors;
+  errors?: JobErrors;
   message: string;
   data?: Map<string, any>;
 };
@@ -24,4 +24,18 @@ export enum JobStatus {
   COMPLETED_WITH_ERRORS = 'completed-with-errors',
   FAILED = 'failed',
   CANCELLED = 'cancelled'
+}
+
+export type JobDbChangeEvent = {
+  _id: {
+    _data: any;
+  },
+  operationType: 'insert' | 'update' | 'delete';
+  ns: {
+    db: string;
+    coll: string;
+  },
+  documentKey: {
+    _id: string;
+  }
 }

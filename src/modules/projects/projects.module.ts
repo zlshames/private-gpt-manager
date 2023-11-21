@@ -1,17 +1,19 @@
-import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 import { Project, ProjectSchema } from './projects.schema';
 import { RequireJsonMiddleware } from 'src/middleware/require-json.middleware';
 import { DocumentsModule } from '../documents/documents.module';
+import { JobsModule } from '../jobs/jobs.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
         { name: Project.name, schema: ProjectSchema },
     ]),
-    DocumentsModule
+    DocumentsModule,
+    forwardRef(() => JobsModule)
   ],
   controllers: [
     ProjectsController
@@ -24,6 +26,10 @@ import { DocumentsModule } from '../documents/documents.module';
   ]
 })
 export class ProjectsModule {
+  constructor() {
+    console.log(`ProjectsModule Init`)
+  }
+
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(RequireJsonMiddleware)
