@@ -40,12 +40,11 @@ export class ProjectsService {
   }
 
   async enable(id: string): Promise<Job> {
-    const project = await this.findOne({ id });
+    const project = await this.projectModel.findOne({ _id: id }).exec();
     if (!project) {
       throw new NotFoundException(`Project #${id} not found`);
     }
 
-    // Once the project is created, we need to create a job for it
     const createdJob = await this.jobsService.create(id, {
       type: JobTypes.ENABLE_PROJECT,
       input: {
@@ -53,16 +52,17 @@ export class ProjectsService {
       }
     });
 
+    project.enabled = true;
+    await project.save();
     return createdJob;
   }
 
   async disable(id: string): Promise<Job> {
-    const project = await this.findOne({ id });
+    const project = await this.projectModel.findOne({ _id: id }).exec();
     if (!project) {
       throw new NotFoundException(`Project #${id} not found`);
     }
 
-    // Once the project is created, we need to create a job for it
     const createdJob = await this.jobsService.create(id, {
       type: JobTypes.DISABLE_PROJECT,
       input: {
@@ -70,6 +70,8 @@ export class ProjectsService {
       }
     });
 
+    project.enabled = false;
+    await project.save();
     return createdJob;
   }
 
@@ -79,7 +81,6 @@ export class ProjectsService {
       throw new NotFoundException(`Project #${id} not found`);
     }
 
-    // Once the project is created, we need to create a job for it
     const createdJob = await this.jobsService.create(id, {
       type: JobTypes.STOP_PROJECT,
       input: {
@@ -163,14 +164,22 @@ export class ProjectsService {
     return await this.documentsService.create({ projectId: id, ...createDocumentDto });
   }
 
-  async delete(id: string): Promise<Project> {
+  async delete(id: string): Promise<Job> {
     const project = await this.projectModel.findOne({ _id: id }).exec();
     if (!project) {
       throw new NotFoundException(`Project #${id} not found`);
     }
 
+    const createdJob = await this.jobsService.create(id, {
+      type: JobTypes.STOP_PROJECT,
+      input: {
+        projectId: id
+      }
+    });
+
     project.deletedAt = new Date();
-    return project.save();
+    await project.save();
+    return createdJob;
   }
 
   async hardDelete(id: string): Promise<Project> {
