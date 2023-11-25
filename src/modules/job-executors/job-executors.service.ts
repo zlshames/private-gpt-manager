@@ -6,10 +6,17 @@ import { ProjectsService } from "src/modules/projects/projects.service";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { JobItem } from "../jobs/lib/job-item";
 import { JobsService } from "../jobs/jobs.service";
-import { InjectModel } from "@nestjs/mongoose";
 import { EnableProjectExecutor } from "./executors/docker-private-gpt/enable-project.executor";
 
-require('dotenv').config();
+
+const jobExecutors = {
+    [JobTypes.CREATE_PROJECT]: CreateProjectExecutor,
+    [JobTypes.START_PROJECT]: EnableProjectExecutor,
+    [JobTypes.ENABLE_PROJECT]: EnableProjectExecutor,
+    [JobTypes.DISABLE_PROJECT]: EnableProjectExecutor,
+    [JobTypes.DELETE_PROJECT]: DeleteProjectExecutor,
+    [JobTypes.INGEST_DOCUMENT]: IngestDocumentExecutor
+}
 
 
 @Injectable()
@@ -42,9 +49,7 @@ export class JobExecutorsService {
     constructor(
         @Inject(JobsService) private jobsService: JobsService,
         @Inject(ProjectsService) private projectsService: ProjectsService
-      ) {
-        this.log.debug(`JobExecutorsService Instantiated`);
-      }
+      ) {}
 
     /**
      * Fail any jobs that were running when the server was restarted
@@ -239,19 +244,11 @@ export class JobExecutorsService {
      * @returns {Executor} The executor for the job
      */
     getJobExecutor(job: JobItem) {
-        switch (job._job.type) {
-            case JobTypes.CREATE_PROJECT:
-                return new CreateProjectExecutor(job, this.projectsService);
-            case JobTypes.ENABLE_PROJECT:
-                return new EnableProjectExecutor(job, this.projectsService);
-            case JobTypes.DISABLE_PROJECT:
-                return new EnableProjectExecutor(job, this.projectsService);
-            case JobTypes.DELETE_PROJECT:
-                return new DeleteProjectExecutor(job, this.projectsService);
-            case JobTypes.INGEST_DOCUMENT:
-                return new IngestDocumentExecutor(job, this.projectsService);
-            default:
-                throw new Error(`Unknown job type: ${job._job.type}`);
+        const executor = jobExecutors[job._job.type];
+        if (!executor) {
+            throw new Error(`No executor found for job type ${job._job.type}`);
         }
+
+        return new executor(job, this.projectsService);
     }
 }

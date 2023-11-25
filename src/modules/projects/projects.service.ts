@@ -39,6 +39,24 @@ export class ProjectsService {
     return createdJob;
   }
 
+  async start(id: string): Promise<Job> {
+    const project = await this.projectModel.findOne({ _id: id }).exec();
+    if (!project) {
+      throw new NotFoundException(`Project #${id} not found`);
+    }
+
+    const createdJob = await this.jobsService.create(id, {
+      type: JobTypes.START_PROJECT,
+      input: {
+        projectId: id
+      }
+    });
+
+    project.enabled = true;
+    await project.save();
+    return createdJob;
+  }
+
   async enable(id: string): Promise<Job> {
     const project = await this.projectModel.findOne({ _id: id }).exec();
     if (!project) {

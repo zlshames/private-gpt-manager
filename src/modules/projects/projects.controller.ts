@@ -29,6 +29,11 @@ export class ProjectsController {
     return await this.projectsService.create(data);
   }
 
+  @Post(':id/start')
+  async start(@Param() param) {
+    return await this.projectsService.start(param.id);
+  }
+
   @Post(':id/enable')
   async enable(@Param() param) {
     return await this.projectsService.enable(param.id);

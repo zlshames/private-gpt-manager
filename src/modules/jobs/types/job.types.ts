@@ -15,6 +15,7 @@ export type JobOutput = {
 
 export enum JobTypes {
   CREATE_PROJECT = 'project.create',
+  START_PROJECT = 'project.start',
   ENABLE_PROJECT = 'project.enable',
   DISABLE_PROJECT = 'project.disable',
   STOP_PROJECT = 'project.stop',
