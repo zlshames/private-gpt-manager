@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import * as Docker from 'dockerode'; 
 import slugify from 'slugify';
 import { simpleGit } from 'simple-git';
@@ -6,7 +7,6 @@ import { simpleGit } from 'simple-git';
 import { Project } from 'src/modules/projects/projects.schema';
 import { Provider, ProviderEvents } from '../provider';
 import { existsSync, mkdirSync } from 'fs';
-import { Document } from 'src/modules/documents/documents.schema';
 import { Logger } from '@nestjs/common';
 import { generateRandomNumber } from 'src/utils/random.utils';
 import { CreateProjectProviderDto } from '../dto/provider.dto';
@@ -15,6 +15,9 @@ import { CreateProjectProviderDto } from '../dto/provider.dto';
 export class DockerPrivateGPTProvider extends Provider {
   private log = new Logger(DockerPrivateGPTProvider.name);
 
+  /**
+   * The path to the app data folder for the provider.
+   */
   get appDataPath(): string {
     return path.join(
       process.env.APPDATA || (process.platform == 'darwin'
@@ -25,48 +28,92 @@ export class DockerPrivateGPTProvider extends Provider {
     )
   }
 
+  /**
+   * The path to directory containing all projects.
+   */
   get projectsPath(): string {
     return path.join(this.appDataPath, 'projects');
   }
 
+  /**
+   * The programmatic/slugged name of the project.
+   */
   get programmaticName(): string {
     return slugify(this.project.name).toLowerCase();
   }
 
+  /**
+   * The name of the docker container.
+   */
   get containerName(): string {
     return `private-gpt-${this.programmaticName}`;
   }
 
+  /**
+   * The path to the specific project directory.
+   */
   get projectPath(): string {
     return path.join(this.projectsPath, this.programmaticName);
   }
 
+  /**
+   * The path to the volumes directory for the project.
+   */
   get projectVolumesPath(): string {
     return path.join(this.projectPath, 'volumes');
   }
 
+  /**
+   * The path to the source documents directory for the project.
+   */
   get hostSourceDocsPath(): string {
     return path.join(this.projectVolumesPath, 'source_documents')
   }
 
+  /**
+   * Whether or not the project folder exists.
+   */
   get projectFolderExists(): boolean {
     return existsSync(this.projectPath);
   }
 
+  constructor(project: Project) {
+    super(project);
+  }
+
+  /**
+   * Setup the provider.
+   */
   async setup(): Promise<void> {
     this.createDirectories();
   }
 
+  /**
+   * Create the directories needed for the provider.
+   */
   createDirectories() {
     mkdirSync(this.projectsPath, { recursive: true });
     mkdirSync(this.projectPath, { recursive: true });
     mkdirSync(this.projectVolumesPath, { recursive: true });
   }
 
+  /**
+   * Whether or not the project is available.
+   * In order for a project to be available, it needs
+   * to have a project folder and a docker container that is running.
+   * 
+   * @returns Whether or not the project is available.
+   */
   async projectIsAvailable(): Promise<boolean> {
     return this.projectFolderExists && await this.dockerProjectIsSetup();
   }
 
+  /**
+   * Get the docker container for the project.
+   * 
+   * @param name The name of the container.
+   * @returns The docker container.
+   */
   private async getDockerContainer(name: string): Promise<Docker.Container> {
     const docker = new Docker();
     const containers = await docker.listContainers({
@@ -83,6 +130,11 @@ export class DockerPrivateGPTProvider extends Provider {
     return docker.getContainer(containers[0].Id);
   }
 
+  /**
+   * Whether or not the docker project is setup & running.
+   *
+   * @returns Whether or not the docker project is setup.
+   */
   private async dockerProjectIsSetup(): Promise<boolean> {
     const docker = await this.getDockerContainer(this.containerName);
     if (!docker) return false;
@@ -91,7 +143,13 @@ export class DockerPrivateGPTProvider extends Provider {
     return info.State.Running;
   }
 
-  private getPortsForProject(project: Project): number[] {
+  /**
+   * Get the ports for the project.
+   * 
+   * @param project The project to get the ports for.
+   * @returns The ports for the project.
+   */
+  private getPortsForProject(): number[] {
     const sluggedName = this.programmaticName;
     return [
       generateRandomNumber(10000, 50000, `${sluggedName}-api`),
@@ -99,6 +157,11 @@ export class DockerPrivateGPTProvider extends Provider {
     ];
   }
 
+  /**
+   * Create the project.
+   * 
+   * @param params The parameters for creating the project.
+   */
   async createProject(params?: CreateProjectProviderDto): Promise<void> {
     const dContainer = await this.getDockerContainer(this.programmaticName);
     this.emit(ProviderEvents.PROGRESS, 5, 100);
@@ -142,7 +205,7 @@ export class DockerPrivateGPTProvider extends Provider {
     this.log.debug(`Docker image created!`);
     this.emit(ProviderEvents.PROGRESS, 50, 100);
 
-    const [apiPort, _] = this.getPortsForProject(this.project);
+    const [apiPort, _] = this.getPortsForProject();
     const remoteDocsVolume = '/root/privateGPT/server/source_documents';
     
     // Create the docker container
@@ -172,6 +235,12 @@ export class DockerPrivateGPTProvider extends Provider {
     this.log.debug(`Docker container started: ${this.project.name}`);
   }
 
+  /**
+   * Create a docker image from a git repo.
+   * 
+   * @param gitLink The git link to clone.
+   * @param tag The tag to use for the docker image.
+   */
   async createDockerImage(gitLink: string, tag: string): Promise<void> {
     this.log.log(`Cloning: ${gitLink}`);
     const repoPath = path.join(this.appDataPath, tag.replaceAll('/', '-').replaceAll(':', '-'));
@@ -215,6 +284,12 @@ export class DockerPrivateGPTProvider extends Provider {
     });
   }
 
+  /**
+   * Pull a docker image
+   *
+   * @param image The name of the image to pull.
+   * @returns The output of the pull.
+   */
   async pullDockerImage(image: string): Promise<void> {
     const docker = new Docker();
     return new Promise((resolve, reject) => {
@@ -235,6 +310,11 @@ export class DockerPrivateGPTProvider extends Provider {
     });
   }
 
+  /**
+   * Start the project.
+   *
+   * @returns The output of the start.
+   */
   async startProject(): Promise<void> {
     // Check if the container exists
     const container = await this.getDockerContainer(this.containerName);
@@ -248,6 +328,11 @@ export class DockerPrivateGPTProvider extends Provider {
     return await container.start();
   }
 
+  /**
+   * Stop the project.
+   *
+   * @returns The output of the stop.
+   */
   async stopProject(): Promise<void> {
     // Check if the container exists
     const container = await this.getDockerContainer(this.containerName);
@@ -265,6 +350,12 @@ export class DockerPrivateGPTProvider extends Provider {
     return await container.stop();
   }
 
+  /**
+   * Enable the project.
+   * If the project doesn't exist, create it.
+   *
+   * @returns The output of the create.
+   */
   async enableProject(): Promise<void> {
     // Check if the container exists
     const container = await this.getDockerContainer(this.containerName);
@@ -275,6 +366,13 @@ export class DockerPrivateGPTProvider extends Provider {
     }
   }
 
+  /**
+   * Disable the project.
+   * If the project doesn't exist, don't do anything.
+   * If the project exists and is running, stop it.
+   * 
+   * @returns The output of the disable.
+   */
   async disableProject(): Promise<void> {
     // Check if the container exists.
     // If it doesn't, don't do anything
@@ -288,6 +386,12 @@ export class DockerPrivateGPTProvider extends Provider {
     return await container.stop();
   }
 
+  /**
+   * Delete the project.
+   * If the project doesn't exist, don't do anything.
+   * If the project exists and is running, stop it and then remove it.
+   * @returns 
+   */
   async deleteProject(): Promise<void> {
     // Check if the container exists
     const container = await this.getDockerContainer(this.containerName);
@@ -304,7 +408,12 @@ export class DockerPrivateGPTProvider extends Provider {
     await container.remove({ force: true });
   }
 
-  ingestFile(path: string): Promise<void> {
-    throw new Error('Method not implemented.');
+  /**
+   * Ingest a file into the project.
+   *
+   * @param path The path to the file to ingest.
+   */
+  async ingestFile(filePath: string): Promise<void> {
+    fs.copyFileSync(filePath, path.join(this.hostSourceDocsPath, path.basename(filePath)));
   }
 }
