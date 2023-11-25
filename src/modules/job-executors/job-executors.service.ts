@@ -78,11 +78,9 @@ export class JobExecutorsService {
         await this.runJobs();
 
         // Listen for changes to the job database
-        this.jobsService.registerDbChangeListener((event: JobDbChangeEvent) => {
-            if (event.operationType === 'insert') {
-                this.log.log('New job added to database. Running jobs now');
-                this.runJobs();
-            }
+        this.jobsService.addCreateListener((event: JobDbChangeEvent) => {
+            this.log.log('New job added to database. Running jobs now');
+            this.runJobs();
         })
     }
 
@@ -133,6 +131,10 @@ export class JobExecutorsService {
                 // Run the jobs
                 for (const job of jobsToRun) {
                     const jobPromise = this.runJob(job);
+
+                    job._job.status = JobStatus.RUNNING;
+                    job._job.progress = 0;
+                    await job.update();
 
                     // Add the promise to the running jobs list
                     this._runningJobs.push(jobPromise);

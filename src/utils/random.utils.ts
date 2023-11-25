@@ -4,5 +4,6 @@ export const generateRandomNumber = (min: number, max: number, seed: string = nu
   const generator = (seed)
     ? seedrandom(seed)
     : Math.random;
-  return Math.floor(generator() * max) + min;
+
+  return Math.floor(generator() * (max - min + 1)) + min;
 };

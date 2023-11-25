@@ -19,10 +19,38 @@ export class JobsService {
 
   private log = new Logger(JobsService.name);
 
+  private createListeners: ((event: JobDbChangeEvent) => void)[] = [];
+  private updateListeners: ((event: JobDbChangeEvent) => void)[] = [];
+  private deleteListeners: ((event: JobDbChangeEvent) => void)[] = [];
+
   constructor(
     @InjectModel(Job.name) private jobModel: Model<Job>,
     @Inject(forwardRef(() => ProjectsService)) private projectsService: ProjectsService,
   ) {}
+
+  addCreateListener(listener: (event: JobDbChangeEvent) => void) {
+    this.createListeners.push(listener);
+  }
+
+  addUpdateListener(listener: (event: JobDbChangeEvent) => void) {
+    this.updateListeners.push(listener);
+  }
+
+  addDeleteListener(listener: (event: JobDbChangeEvent) => void) {
+    this.deleteListeners.push(listener);
+  }
+
+  dispatchCreateEvent(event: JobDbChangeEvent) {
+    this.createListeners.forEach(listener => listener(event));
+  }
+
+  dispatchUpdateEvent(event: JobDbChangeEvent) {
+    this.updateListeners.forEach(listener => listener(event));
+  }
+
+  dispatchDeleteEvent(event: JobDbChangeEvent) {
+    this.deleteListeners.forEach(listener => listener(event));
+  }
 
   async create(projectId: string, createJobDto: CreateJobForProjectDto): Promise<Job> {
     this.log.debug(`Creating job for project #${projectId}`);
@@ -32,7 +60,9 @@ export class JobsService {
     }
 
     const job = new this.jobModel({ ...createJobDto, project });
-    return await job.save();
+    const res = await job.save();
+    this.dispatchCreateEvent({ job: res, operationType: 'insert' });
+    return res;
   }
 
   async find(findJobsDto: FindJobsDto = {}): Promise<Job[]> {
@@ -69,7 +99,9 @@ export class JobsService {
     }
 
     job.set(updateJobDto);
-    return job.save();
+    const res = await job.save();
+    this.dispatchUpdateEvent({ job: res, operationType: 'update' });
+    return res;
   }
 
   async setJobMetadata(id: string, setJobMetadata: SetJobMetadataDto): Promise<Job> {
@@ -110,7 +142,33 @@ export class JobsService {
     return await this.jobModel.findOneAndDelete({ _id: id }).exec();
   }
 
-  registerDbChangeListener(changeListener: (event: JobDbChangeEvent) => void) {
-    this.jobModel.watch().on('change', changeListener);
+  removeAllListeners() {
+    this.createListeners = [];
+    this.updateListeners = [];
+    this.deleteListeners = [];
+  }
+
+  removeAllCreateListeners() {
+    this.createListeners = [];
+  }
+
+  removeAllUpdateListeners() {
+    this.updateListeners = [];
+  }
+
+  removeAllDeleteListeners() {
+    this.deleteListeners = [];
+  }
+
+  removeCreateListener(listener: (event: JobDbChangeEvent) => void) {
+    this.createListeners = this.createListeners.filter(l => l !== listener);
+  }
+
+  removeUpdateListener(listener: (event: JobDbChangeEvent) => void) {
+    this.updateListeners = this.updateListeners.filter(l => l !== listener);
+  }
+
+  removeDeleteListener(listener: (event: JobDbChangeEvent) => void) {
+    this.deleteListeners = this.deleteListeners.filter(l => l !== listener);
   }
 }

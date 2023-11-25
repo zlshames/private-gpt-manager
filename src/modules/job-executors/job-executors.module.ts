@@ -20,7 +20,6 @@ export class JobExecutorsModule {
   constructor(
     @Inject(JobExecutorsService) private jobExecutorsService: JobExecutorsService
   ) {
-    console.log("HERERE")
     this.jobExecutorsService.start();
   }
 }

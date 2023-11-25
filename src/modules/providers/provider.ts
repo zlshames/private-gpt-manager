@@ -1,19 +1,48 @@
+import * as EventEmitter from 'events';
 import { Document } from '../documents/documents.schema';
 import type { Project } from '../projects/projects.schema';
 
 
-export abstract class Provider {
-    abstract setup(project: Project): Promise<void>;
+export enum ProviderEvents {
+    PROGRESS = 'progress',
+}
 
-    abstract projectIsAvailable(project: Project): Promise<boolean>;
+export abstract class Provider extends EventEmitter {
 
-    abstract createProject(project: Project): Promise<void>;
+    private _project: Project;
 
-    abstract deleteProject(project: Project): Promise<void>;
+    get project(): Project {
+        return this._project;
+    }
 
-    abstract ingestFile(project: Project, path: string): Promise<void>;
+    set project(project: Project) {
+        this._project = project;
+    }
 
-    abstract getDocuments(project: Project): Promise<Document>;
+    constructor(project: Project) {
+        super();
+        this._project = project;
+    }
+
+    abstract setup(): Promise<void>;
+
+    abstract projectIsAvailable(): Promise<boolean>;
+
+    abstract createProject(): Promise<void>;
+
+    abstract startProject(): Promise<void>;
+
+    abstract stopProject(): Promise<void>;
+
+    abstract enableProject(): Promise<void>;
+
+    abstract disableProject(): Promise<void>;
+
+    abstract deleteProject(): Promise<void>;
+
+    abstract ingestFile(path: string): Promise<void>;
+
+    abstract getDocuments(): Promise<Document>;
     
     abstract teardown(): Promise<void>;
 }

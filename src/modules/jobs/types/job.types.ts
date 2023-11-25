@@ -1,3 +1,5 @@
+import { Job } from "../jobs.schema";
+
 export type JobErrors = [
   {
     message: string;
@@ -27,15 +29,6 @@ export enum JobStatus {
 }
 
 export type JobDbChangeEvent = {
-  _id: {
-    _data: any;
-  },
+  job?: Job;
   operationType: 'insert' | 'update' | 'delete';
-  ns: {
-    db: string;
-    coll: string;
-  },
-  documentKey: {
-    _id: string;
-  }
 }

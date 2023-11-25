@@ -11,15 +11,15 @@ export class SetupProjectExecutor extends Executor {
   constructor(job: JobItem, projectsService: ProjectsService) {
     super(job, projectsService);
 
-    this.dockerPrivateGPTProvider = new DockerPrivateGPTProvider();
+    this.dockerPrivateGPTProvider = new DockerPrivateGPTProvider(job._job.project);
   }
 
   async run(): Promise<void> {
-    const isSetup = await this.dockerPrivateGPTProvider.projectIsAvailable(this.job._job.project);
+    const isSetup = await this.dockerPrivateGPTProvider.projectIsAvailable();
     if (isSetup) {
       throw new Error(`Project ${this.job._job.project.name} already exists`);
     }
 
-    await this.dockerPrivateGPTProvider.setup(this.job._job.project);
+    await this.dockerPrivateGPTProvider.setup();
   }
 }
