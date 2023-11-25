@@ -22,9 +22,7 @@ export class ProjectsService {
     @InjectModel(Project.name) private projectModel: Model<Project>,
     @Inject(DocumentsService) private documentsService: DocumentsService,
     @Inject(forwardRef(() => JobsService)) private jobsService: JobsService
-  ) {
-    console.log(`ProjectsService Init`)
-  }
+  ) {}
 
   async create(createProjectDto: CreateProjectDto): Promise<Job> {
     let createdProject = new this.projectModel(createProjectDto);
@@ -35,6 +33,57 @@ export class ProjectsService {
       type: JobTypes.CREATE_PROJECT,
       input: {
         projectId: createdProject.id
+      }
+    });
+
+    return createdJob;
+  }
+
+  async enable(id: string): Promise<Job> {
+    const project = await this.findOne({ id });
+    if (!project) {
+      throw new NotFoundException(`Project #${id} not found`);
+    }
+
+    // Once the project is created, we need to create a job for it
+    const createdJob = await this.jobsService.create(id, {
+      type: JobTypes.ENABLE_PROJECT,
+      input: {
+        projectId: id
+      }
+    });
+
+    return createdJob;
+  }
+
+  async disable(id: string): Promise<Job> {
+    const project = await this.findOne({ id });
+    if (!project) {
+      throw new NotFoundException(`Project #${id} not found`);
+    }
+
+    // Once the project is created, we need to create a job for it
+    const createdJob = await this.jobsService.create(id, {
+      type: JobTypes.DISABLE_PROJECT,
+      input: {
+        projectId: id
+      }
+    });
+
+    return createdJob;
+  }
+
+  async stop(id: string): Promise<Job> {
+    const project = await this.findOne({ id });
+    if (!project) {
+      throw new NotFoundException(`Project #${id} not found`);
+    }
+
+    // Once the project is created, we need to create a job for it
+    const createdJob = await this.jobsService.create(id, {
+      type: JobTypes.STOP_PROJECT,
+      input: {
+        projectId: id
       }
     });
 

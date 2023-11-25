@@ -2,9 +2,10 @@ import { DockerPrivateGPTProvider } from "src/modules/providers/docker-private-g
 import { Executor } from "../executor";
 import { JobItem } from "src/modules/jobs/lib/job-item";
 import { ProjectsService } from "src/modules/projects/projects.service";
+import { ProviderEvents } from "src/modules/providers/provider";
 
 
-export class DeleteProjectExecutor extends Executor {
+export class EnableProjectExecutor extends Executor {
 
   dockerPrivateGPTProvider: DockerPrivateGPTProvider;
 
@@ -16,7 +17,7 @@ export class DeleteProjectExecutor extends Executor {
 
   async run(): Promise<void> {
     await this.dockerPrivateGPTProvider.setup();
-    await this.dockerPrivateGPTProvider.deleteProject();
-    await this.job.complete({ message: `Project ${this.job._job.project.name} deleted` });
+    await this.dockerPrivateGPTProvider.enableProject();
+    await this.job.complete({ message: `Project ${this.job._job.project.name} enabled` });
   }
 }

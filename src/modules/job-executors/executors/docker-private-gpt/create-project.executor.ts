@@ -17,11 +17,6 @@ export class CreateProjectExecutor extends Executor {
 
   async run(): Promise<void> {
     await this.dockerPrivateGPTProvider.setup();
-    const isSetup = await this.dockerPrivateGPTProvider.projectIsAvailable();
-    if (isSetup) {
-      throw new Error(`Project ${this.job._job.project.name} already exists`);
-    }
-
     this.dockerPrivateGPTProvider.on(ProviderEvents.PROGRESS, async (progress, total) => {
       // Round with no decimals
       this.job._job.progress = Math.round(progress / total * 100);

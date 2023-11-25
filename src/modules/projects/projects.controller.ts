@@ -29,6 +29,21 @@ export class ProjectsController {
     return await this.projectsService.create(data);
   }
 
+  @Post(':id/enable')
+  async enable(@Param() param) {
+    return await this.projectsService.enable(param.id);
+  }
+
+  @Post(':id/disable')
+  async disable(@Param() param) {
+    return await this.projectsService.disable(param.id);
+  }
+
+  @Post(':id/stop')
+  async stop(@Param() param) {
+    return await this.projectsService.stop(param.id);
+  }
+
   @Put(':id')
   async update(@Param() param, @Body() body: CreateProjectDto) {
     const data = await this.projectsService.update(param.id, body);

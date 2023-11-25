@@ -7,6 +7,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { JobItem } from "../jobs/lib/job-item";
 import { JobsService } from "../jobs/jobs.service";
 import { InjectModel } from "@nestjs/mongoose";
+import { EnableProjectExecutor } from "./executors/docker-private-gpt/enable-project.executor";
 
 require('dotenv').config();
 
@@ -241,6 +242,10 @@ export class JobExecutorsService {
         switch (job._job.type) {
             case JobTypes.CREATE_PROJECT:
                 return new CreateProjectExecutor(job, this.projectsService);
+            case JobTypes.ENABLE_PROJECT:
+                return new EnableProjectExecutor(job, this.projectsService);
+            case JobTypes.DISABLE_PROJECT:
+                return new EnableProjectExecutor(job, this.projectsService);
             case JobTypes.DELETE_PROJECT:
                 return new DeleteProjectExecutor(job, this.projectsService);
             case JobTypes.INGEST_DOCUMENT:

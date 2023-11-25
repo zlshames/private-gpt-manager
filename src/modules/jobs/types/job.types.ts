@@ -15,6 +15,9 @@ export type JobOutput = {
 
 export enum JobTypes {
   CREATE_PROJECT = 'project.create',
+  ENABLE_PROJECT = 'project.enable',
+  DISABLE_PROJECT = 'project.disable',
+  STOP_PROJECT = 'project.stop',
   DELETE_PROJECT = 'project.delete',
   INGEST_DOCUMENT = 'project.document.ingest'
 };
