@@ -9,6 +9,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { Document } from 'src/modules/documents/documents.schema';
 import { Logger } from '@nestjs/common';
 import { generateRandomNumber } from 'src/utils/random.utils';
+import { CreateProjectProviderDto } from '../dto/provider.dto';
 
 
 export class DockerPrivateGPTProvider extends Provider {
@@ -98,7 +99,7 @@ export class DockerPrivateGPTProvider extends Provider {
     ];
   }
 
-  async createProject(): Promise<void> {
+  async createProject(params?: CreateProjectProviderDto): Promise<void> {
     const dContainer = await this.getDockerContainer(this.programmaticName);
     this.emit(ProviderEvents.PROGRESS, 5, 100);
 
@@ -162,10 +163,13 @@ export class DockerPrivateGPTProvider extends Provider {
     });
 
     this.emit(ProviderEvents.PROGRESS, 90, 100);
-    this.log.debug(`Docker container created: ${name}`);
-    this.log.debug(`Starting docker container: ${name}`);
+    this.log.debug(`Docker container created: ${this.project.name}`);
+    if (!params.start) return;
+
+    
+    this.log.debug(`Starting docker container: ${this.project.name}`);
     await container.start();
-    this.log.debug(`Docker container started: ${name}`);
+    this.log.debug(`Docker container started: ${this.project.name}`);
   }
 
   async createDockerImage(gitLink: string, tag: string): Promise<void> {
@@ -231,32 +235,76 @@ export class DockerPrivateGPTProvider extends Provider {
     });
   }
 
-  startProject(): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-  stopProject(): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-  enableProject(): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-  disableProject(): Promise<void> {
-    throw new Error('Method not implemented.');
+  async startProject(): Promise<void> {
+    // Check if the container exists
+    const container = await this.getDockerContainer(this.containerName);
+
+    // If it doesn't, create the project
+    if (!container) {
+      return await this.createProject();
+    }
+
+    // If it does, check if it's running
+    return await container.start();
   }
 
-  deleteProject(): Promise<void> {
-    throw new Error('Method not implemented.');
+  async stopProject(): Promise<void> {
+    // Check if the container exists
+    const container = await this.getDockerContainer(this.containerName);
+
+    // If it doesn't, throw an error
+    if (!container) {
+      throw new Error(`Container ${this.containerName} does not exist`);
+    }
+
+    // Don't do anything if the container is already stopped
+    const info = await container.inspect();
+    if (!info.State.Running) return;
+
+    // If it does, check if it's running
+    return await container.stop();
+  }
+
+  async enableProject(): Promise<void> {
+    // Check if the container exists
+    const container = await this.getDockerContainer(this.containerName);
+
+    // If it doesn't, create it
+    if (!container) {
+      return await this.createProject();
+    }
+  }
+
+  async disableProject(): Promise<void> {
+    // Check if the container exists.
+    // If it doesn't, don't do anything
+    const container = await this.getDockerContainer(this.containerName);
+    if (!container) return;
+
+    // If the container exists and is running, stop it
+    const info = await container.inspect();
+    if (!info.State.Running) return;
+
+    return await container.stop();
+  }
+
+  async deleteProject(): Promise<void> {
+    // Check if the container exists
+    const container = await this.getDockerContainer(this.containerName);
+
+    // If it doesn't, don't do anything
+    if (!container) return;
+
+    // If it does, stop it and remove it
+    const info = await container.inspect();
+    if (info.State.Running) {
+      await container.stop();
+    }
+
+    await container.remove({ force: true });
   }
 
   ingestFile(path: string): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-
-  getDocuments(): Promise<Document> {
-    throw new Error('Method not implemented.');
-  }
-
-  teardown(): Promise<void> {
     throw new Error('Method not implemented.');
   }
 }

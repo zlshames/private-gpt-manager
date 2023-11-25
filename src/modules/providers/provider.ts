@@ -1,6 +1,7 @@
 import * as EventEmitter from 'events';
 import { Document } from '../documents/documents.schema';
 import type { Project } from '../projects/projects.schema';
+import { CreateProjectProviderDto } from './dto/provider.dto';
 
 
 export enum ProviderEvents {
@@ -28,7 +29,7 @@ export abstract class Provider extends EventEmitter {
 
     abstract projectIsAvailable(): Promise<boolean>;
 
-    abstract createProject(): Promise<void>;
+    abstract createProject(params?: CreateProjectProviderDto): Promise<void>;
 
     abstract startProject(): Promise<void>;
 
@@ -41,8 +42,4 @@ export abstract class Provider extends EventEmitter {
     abstract deleteProject(): Promise<void>;
 
     abstract ingestFile(path: string): Promise<void>;
-
-    abstract getDocuments(): Promise<Document>;
-    
-    abstract teardown(): Promise<void>;
 }
