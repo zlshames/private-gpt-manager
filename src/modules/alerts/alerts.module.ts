@@ -5,13 +5,15 @@ import { AlertsService } from './alerts.service';
 import { Alert, AlertSchema } from './alerts.schema';
 import { RequireJsonMiddleware } from 'src/middleware/require-json.middleware';
 import { DocumentsModule } from '../documents/documents.module';
+import { ProjectsModule } from '../projects/projects.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
         { name: Alert.name, schema: AlertSchema },
     ]),
-    DocumentsModule
+    DocumentsModule,
+    ProjectsModule,
   ],
   controllers: [
     AlertsController

@@ -4,7 +4,10 @@ import { FindAlertsDto } from './dto/find-alerts.dto';
 import { MarkAlertsReadDto } from './dto/mark-alerts-read.dto';
 
 
-@Controller('alerts')
+@Controller({
+  version: '1',
+  path: 'alerts'
+})
 export class AlertsController {
   constructor(private alertsService: AlertsService) {}
 

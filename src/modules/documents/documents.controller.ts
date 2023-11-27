@@ -8,7 +8,10 @@ import { FindOneDocumentDto } from './dto/find-one-document.dto';
 
 
 
-@Controller('documents')
+@Controller({
+  version: '1',
+  path: 'documents'
+})
 export class DocumentsController {
   constructor(private documentsService: DocumentsService) {}
 

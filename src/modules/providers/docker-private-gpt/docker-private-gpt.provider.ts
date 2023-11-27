@@ -86,6 +86,7 @@ export class DockerPrivateGPTProvider extends Provider {
    */
   async setup(): Promise<void> {
     this.createDirectories();
+    throw new Error("This is an error!");
   }
 
   /**
@@ -266,8 +267,7 @@ export class DockerPrivateGPTProvider extends Provider {
     this.log.log(`Building docker image: ${tag}`);
     const stream = await docker.buildImage({
       context: repoPath,
-      // All files in repoPath
-      src: ['.'],
+      src: ['.'],  // All files in repoPath
     }, { t: tag });
 
     // Log the output of the build
@@ -302,7 +302,7 @@ export class DockerPrivateGPTProvider extends Provider {
         }
   
         const onProgress = (event) => {
-          console.log(JSON.stringify(event));
+          this.log.debug(JSON.stringify(event));
         }
 
         docker.modem.followProgress(stream, onFinished, onProgress);

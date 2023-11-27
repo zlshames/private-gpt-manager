@@ -1,6 +1,9 @@
 import { Controller, Delete, Get, Post, Put } from '@nestjs/common';
 
-@Controller('ingests')
+@Controller({
+  version: '1',
+  path: 'ingests'
+})
 export class IngestsController {
   @Get()
   findAll(): string {

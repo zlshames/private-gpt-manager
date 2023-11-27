@@ -4,7 +4,7 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app/app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import fmp from '@fastify/multipart';
 
 async function bootstrap() {
@@ -12,6 +12,10 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter()
   );
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
   
   app.register(fmp, {
     limits: {

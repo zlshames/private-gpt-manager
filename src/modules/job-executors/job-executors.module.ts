@@ -1,12 +1,14 @@
-import { Inject, Module, forwardRef } from '@nestjs/common';
+import { Inject, Module } from '@nestjs/common';
 import { ProjectsModule } from '../projects/projects.module';
 import { JobExecutorsService } from './job-executors.service';
 import { JobsModule } from '../jobs/jobs.module';
+import { AlertsModule } from '../alerts/alerts.module';
 
 @Module({
   imports: [
-    forwardRef(() => ProjectsModule),
-    forwardRef(() => JobsModule)
+    AlertsModule,
+    ProjectsModule,
+    JobsModule
   ],
   controllers: [],
   providers: [

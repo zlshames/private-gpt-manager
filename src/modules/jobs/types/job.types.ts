@@ -3,6 +3,7 @@ import { Job } from "../jobs.schema";
 export type JobErrors = [
   {
     message: string;
+    stack?: string;
     data?: Map<string, any>;
   }
 ];

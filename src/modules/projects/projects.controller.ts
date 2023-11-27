@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { FindProjectsDto } from './dto/find-projects.dto';
@@ -10,7 +10,10 @@ import { createWriteStream } from 'fs';
 import { promisify } from 'node:util';
 
 
-@Controller('projects')
+@Controller({
+  version: '1',
+  path: 'projects'
+})
 export class ProjectsController {
   constructor(private projectsService: ProjectsService) {}
 

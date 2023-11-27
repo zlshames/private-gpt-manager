@@ -7,6 +7,8 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { JobItem } from "../jobs/lib/job-item";
 import { JobsService } from "../jobs/jobs.service";
 import { EnableProjectExecutor } from "./executors/docker-private-gpt/enable-project.executor";
+import { AlertsService } from "../alerts/alerts.service";
+import { AlertType } from "../alerts/types/alert.types";
 
 
 const jobExecutors = {
@@ -48,7 +50,8 @@ export class JobExecutorsService {
 
     constructor(
         @Inject(JobsService) private jobsService: JobsService,
-        @Inject(ProjectsService) private projectsService: ProjectsService
+        @Inject(ProjectsService) private projectsService: ProjectsService,
+        @Inject(AlertsService) private alertsService: AlertsService,
       ) {}
 
     /**
@@ -138,15 +141,8 @@ export class JobExecutorsService {
                 for (const job of jobsToRun) {
                     const jobPromise = this.runJob(job);
 
-                    job._job.status = JobStatus.RUNNING;
-                    job._job.progress = 0;
-                    await job.update();
-
-                    // Add the promise to the running jobs list
-                    this._runningJobs.push(jobPromise);
-
                     // When the job is complete, remove it from the list of running jobs
-                    jobPromise.then(() => {
+                    jobPromise.then((job: JobItem) => {
                         this._runningJobs = this._runningJobs.filter(j => j !== jobPromise);
                         this.onComplete(job);
                     }).catch(async (err) => {
@@ -154,16 +150,38 @@ export class JobExecutorsService {
                         await job.fail({
                             errors: [
                                 {
-                                    message: String(err)
+                                    message: String(err),
+                                    stack: err?.stack ?? null
                                 }
                             ],
                             message: 'Job failed with an uncaught exception!'
+                        });
+
+                        // Create an alert for the failed job in the project
+                        await this.alertsService.create(job._job.project._id, {
+                            title: 'Job Failed',
+                            content: `Job #${job._job._id} failed with an uncaught exception!`,
+                            type: AlertType.ERROR,
+                            metadata: {
+                                jobId: job._job._id,
+                                error: String(err)
+                            }
                         });
 
                         // TODO: Log error
                         this._runningJobs = this._runningJobs.filter(j => j !== jobPromise);
                         this.onComplete(job);
                     });
+
+                    // If the job somehow completed already, we don't want to set it as running.
+                    if (job._job.status === JobStatus.PENDING) {
+                        job._job.status = JobStatus.RUNNING;
+                        job._job.progress = 0;
+                        await job.update();
+
+                        // Add the promise to the running jobs list
+                        this._runningJobs.push(jobPromise);
+                    }
                 }
 
                 resolve();
